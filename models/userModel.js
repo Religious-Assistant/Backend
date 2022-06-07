@@ -30,10 +30,6 @@ const userSchema=mongoose.Schema({
     location:{
         type:{typr:String},
         coordinates:[]
-    },
-    primaryMosque:{
-        type:String,
-        default:'None',
     }
 })
 
