@@ -86,9 +86,15 @@ const updateAutoSilentSettings= async (req, res) => {
   }
 };
 
+const testApi=(req,res)=>{
+  const {image} = req.files;
+  console.log(image);
+}
+
 module.exports={
     updatePrimaryMosque,
     updateAutoSilentSettings,
     updateAccountabilityNotificationsSetting,
-    updateNamazNotificationsSetting
+    updateNamazNotificationsSetting,
+    testApi
 }
