@@ -22,10 +22,10 @@ describe("User Routes Testing", () => {
   //Must pass as all details are given, This will be passed for just one time and will fail when you run again because user already exists
   test("It validates user registration", async () => {
     const user = {
-      username: "shahzain",
-      password: "shahzain12_",
-      mobile: "03353378902",
-      religion: 1,
+      username: "nehaKumari",
+      password: "nehaKumari",
+      mobile: "03353378955",
+      religion: 2,
       location: { longitude: 68.8228, latitude: 27.7244 },
     };
 
@@ -62,6 +62,16 @@ describe("User Routes Testing", () => {
     const user = {
       username: "noorFatima",
       password: "noorFatima12",
+    };
+    const res = await request(app).post("/api/login-user").send(user);
+    expect(res.body.success).toBe(true);
+  });
+
+  //Must pass as all details are given
+  test("It validates Login user", async () => {
+    const user = {
+      username: "nehaKumari",
+      password: "nehaKumari",
     };
     const res = await request(app).post("/api/login-user").send(user);
     expect(res.body.success).toBe(true);
