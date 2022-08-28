@@ -5,7 +5,7 @@ const getParahs=async(req, res)=>{
     try{
         const parahs=await QuranInfo.find()
          if(parahs){
-            res.status(200).send({success:true, msg:'Fetched Parahs Successfully', data:parahs[0].parahs})
+            res.status(200).send({success:true, msg:'Fetched Parahs Successfully', data:parahs[0]?.parahs})
         }
         else{
             res.status(200).send({msg:'Could not fetch Parahs', success:false})                
