@@ -6,22 +6,22 @@ let token =
 
 describe("Muslim User Make Announcement Test", () => {
   //   //must pass and make announcement
-  //   test("It validates make Announcement", async () => {
-  //     const user = {
-  //         announcedBy: "noorFatima",
-  //       statement: "new Announcement for eid",
-  //       category: 'EID_NAMAZ',
-  //       longitude: 26.7344,
-  //       latitude: 67.7795,
-  //       avatar: avatar.defaultAvatar,
-  //     };
-  //     const res = await request(app)
-  //       .post("/api/make-announcement")
-  //       .send(user)
-  //       .set("Authorization", token);
-  //       console.log(res.body)
-  //     expect(res.body.success).toBe(true);
-  //   });
+    // test("It validates make Announcement", async () => {
+    //   const user = {
+    //       announcedBy: "noorFatima",
+    //     statement: "new Announcement for eid",
+    //     category: 'EID_NAMAZ',
+    //     longitude: 28.790094,
+    //     latitude: 68.78905,
+    //     avatar: avatar.defaultAvatar,
+    //   };
+    //   const res = await request(app)
+    //     .post("/api/make-announcement")
+    //     .send(user)
+    //     .set("Authorization", token);
+    //     console.log(res.body)
+    //   expect(res.body.success).toBe(true);
+    // });
 
   test("It validates get all Announcements, when username is correct", async () => {
     const user = {
