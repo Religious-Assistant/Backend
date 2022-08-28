@@ -15,11 +15,19 @@ const templeSchema=mongoose.Schema({
     addedBy:{
         type:String,
         required:true,
-        ref:'User',
     },
     verified:{
         type:Boolean,
         default:false,
+    },
+    receivers:[],
+    upVotes:{
+        type:Number,
+        default:0
+    },
+    downVotes:{
+        type:Number,
+        default:0
     }
 })
 

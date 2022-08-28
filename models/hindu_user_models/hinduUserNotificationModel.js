@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { FUNERAL, TEMPLE_CONSENSUS, NEW_TEMPLE_ADDITION, NEW_TEMPLE_UNVERIFIED } = require("../../controllers/utils/constants");
 
 const notificationSchema = mongoose.Schema(
   {
@@ -13,25 +14,27 @@ const notificationSchema = mongoose.Schema(
     category: {
       type: String,
       enum: [
-        "NEW_ANNOUNCEMENT",
-        "TEMPLE_ADDED",
-        "TEMPLE_CONSENSUS",
-        "SETTINGS_CHANGED",
+        FUNERAL,
+        TEMPLE_CONSENSUS,
+        NEW_TEMPLE_ADDITION,
+        NEW_TEMPLE_UNVERIFIED,
       ],
       required: true,
     },
     receivedBy: {
-      //username here
       type: String,
       required: true,
-      ref: "User",
     },
     isOpenedByUser: {
       type: Boolean,
       default: false,
     },
+    icon:{
+      type:String,
+    },
+    causedBy:{type:String,default:""}
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Notification", notificationSchema);
+module.exports = mongoose.model("HinduNotification", notificationSchema);

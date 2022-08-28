@@ -1,31 +1,32 @@
-const mongoose=require('mongoose')
+const mongoose = require("mongoose");
+const { FUNERAL, OTHER } = require("../../controllers/utils/constants");
 
-const announcementSchema=mongoose.Schema({
-
-    statement:{
-        type:String,
-        required:true,
+const announcementSchema = mongoose.Schema(
+  {
+    statement: {
+      type: String,
+      required: true,
     },
-    category:{
-        type:String,
-        enum:['FUNERAL','OTHER'],
-        required:true
+    category: {
+      type: String,
+      enum: [FUNERAL,OTHER],
+      required: true,
     },
-    announcedBy:{       //username here
-        type:String,
-        required:true,
-        ref:'User',
+    announcedBy: {
+      type: String,
+      required: true,
     },
-    location:{          //From where it was announced,
-                        // so we can display to people around that location
-        type:{
-            type:String, 
-        },
-        coordinates:[]
-    },    
+    location: {
+      type: {
+        type: String,
+      },
+      coordinates: [],
+    },
+    targetAudience: [{  type: String}],
+    avatar:{type:String}
+  },
+  { timestamps: true }
+);
 
-},{timestamps: true })
-
-announcementSchema.index({location:'2dsphere'})
- 
-module.exports=mongoose.model('Announcement', announcementSchema)
+announcementSchema.index({ location: "2dsphere" });
+module.exports = mongoose.model("HinduAnnouncement", announcementSchema);

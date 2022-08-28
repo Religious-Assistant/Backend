@@ -1,14 +1,17 @@
 const Announcement = require("../../models/muslim_user_models/muslimAnnouncementModel");
 const DeviceToken = require("../../models/common_models/deviceTokenModel");
 const User = require("../../models/common_models/userModel");
+const MuslimNotification = require("../../models/muslim_user_models/muslimUserNotificationModel");
+
 const MuslimPreference = require("../../models/muslim_user_models/muslimUserPreferencesModel");
 
 const {
   findNearByPeople,
   notifyUsers,
-  getProfileImage,
+  saveNotificationForMuslimUser,
+  getNotificationReceivers,
 } = require("../utils/utils");
-const { ANNOUNCEMENT_CHANNEL_ID } = require("../utils/constants");
+const { ANNOUNCEMENT_CHANNEL_ID, appLogo, announcement_notification_logo } = require("../utils/constants");
 
 //Take announcement Data and make it available to everyone
 const makeAnnouncement = async (req, res) => {
@@ -41,27 +44,32 @@ const makeAnnouncement = async (req, res) => {
         });
 
         if (newAnnouncement) {
-          const title = `New Announcement by ${announcedBy.toUpperCase()}`;
+          const title = `Announcement by ${announcedBy.toUpperCase()}`;
           const body = `${statement}`;
-          const receivers = await DeviceToken.find({}, { _id: 0, __v: 0 }); //Only username,deviceToken are returned
-          //We could send to only those who has subscribed to announcement notfs in preferences
 
-          //Get only device tokens that are targeted i.e within range
-          let recepients = receivers.filter((receiver) =>
-            targetAudience.includes(receiver.username)
-          );
-          const totalReceivers = await notifyUsers(
-            title,
-            body,
-            recepients,
-            ANNOUNCEMENT_CHANNEL_ID,
-            newAnnouncement.avatar
-          );
+          //Returns muslim users in range
+          const recepients=await getNotificationReceivers(targetAudience,1) 
 
-          res.status(200).send({
-            success: true,
-            msg: `Announcement sent to ${totalReceivers} people around your location`,
-          });
+          saveNotificationForMuslimUser(recepients, title, statement,category, newAnnouncement._id, announcement_notification_logo).then(async (data) => {
+              console.log("Created notifiction record for Muslim");
+              const totalReceivers = await notifyUsers(
+                title,
+                body,
+                recepients,
+                ANNOUNCEMENT_CHANNEL_ID,
+                newAnnouncement.avatar,
+              );
+
+              res.status(200).send({
+                success: true,
+                msg: `Announcement sent to ${totalReceivers} people around your location`,
+              });
+            })
+            .catch((error) => {
+              res
+                .status(400)
+                .send({ msg: "Could not notify users", success: false });
+            });
         } else {
           console.log("Could not created");
           res
@@ -86,13 +94,11 @@ const getAllAnnouncements = async (req, res) => {
   try {
     const { username } = req.body;
     let announcements = await Announcement.find({ targetAudience: username });
-    res
-      .status(200)
-      .send({
-        msg: "Here are All Announcements",
-        success: true,
-        data: announcements,
-      });
+    res.status(200).send({
+      msg: "Here are All Announcements",
+      success: true,
+      data: announcements,
+    });
   } catch (error) {
     res.status(400).send(error.message);
   }
@@ -126,29 +132,26 @@ const deleteAnnouncement = async (req, res) => {
   }
 };
 
-
 //For development
 
 const deleteAllAnnouncements = async (req, res) => {
-    console.log("Delete All Announcements API hit");
-  
-    try {
-  
-      await Announcement.deleteMany()
-  
-      res.status(200).send({
-        msg: "Announcements Deleted Successfully",
-        success: true,
-      });
-    } catch (error) {
-      res.status(400).send(error.message);
-    }
-  };
-  
-  
+  console.log("Delete All Announcements API hit");
+
+  try {
+    await Announcement.deleteMany();
+
+    res.status(200).send({
+      msg: "Announcements Deleted Successfully",
+      success: true,
+    });
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+};
+
 module.exports = {
   makeAnnouncement,
   getAllAnnouncements,
   deleteAnnouncement,
-  deleteAllAnnouncements
+  deleteAllAnnouncements,
 };

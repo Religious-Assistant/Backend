@@ -1,8 +1,7 @@
-const fs = require("fs");
-const path = require("path");
 const bcrypt = require("bcrypt");
 const fetch = (...args) =>
   import("node-fetch").then(({ default: fetch }) => fetch(...args));
+require("dotenv").config();
 
 //Models
 const User = require("../../models/common_models/userModel");
@@ -10,48 +9,58 @@ const Tasbih = require("../../models/muslim_user_models/tasbihModel");
 const DeviceToken = require("../../models/common_models/deviceTokenModel");
 const MuslimPreference = require("../../models/muslim_user_models/muslimUserPreferencesModel");
 const QuranRecitation = require("../../models/muslim_user_models/reciteQuranModel");
-const NamazAccountability = require("../../models/muslim_user_models/namazAccountabilityModel");
-const FastAccountability = require("../../models/muslim_user_models/fastAccountabilityModel");
+const LearnNamaz = require("../../models/muslim_user_models/learnNamazModel");
 const QuranInfo = require("../../models/muslim_user_models/quranInfo");
+const NamazAlarms = require("../../models/muslim_user_models/namazAlarmsModel");
+
+const Imam = require("../../models/muslim_user_models/imamModel");
+const HinduPreference = require("../../models/hindu_user_models/hinduUserPreferencesModel");
+const GitaRecitation = require("../../models/hindu_user_models/reciteGitaModel");
 
 //common functions
-const { hashPassword, createToken, getProfileImage } = require("../utils/utils");
+const { hashPassword, createToken } = require("../utils/utils");
 
+const { defaultAvatar, OTP_EXPIRY } = require("../utils/constants");
 const {
-  directoryPath,
-  base_url,
-  defaultAvatar,
-  D7_KEY,
-  OTP_EXPIRY,
-} = require("../utils/constants");
-const { parahMetaData } = require("../../JSONDATA");
+  avatarRemover,
+  getPublicId,
+  base64Uploader,
+} = require("../../utils/cloudinaryUtils");
 
+//Controllers
 
 const registerUser = async (req, res) => {
-  console.log("Register API hit", req.body.password, req.body.username);
+  console.log("Register API hit");
 
   try {
-    const { username } = await req.body;
+    const { username, mobile, password, religion, location } = await req.body;
     const duplicateUser = await User.findOne({ username: username });
     if (duplicateUser) {
       res.status(200).send({ success: false, msg: "User already exists!" });
     } else {
-      const img_url = base_url + defaultAvatar;
-      
-      //By default, Sukkur location is added
       const user_data = await User.create({
-        ...req.body,
+        username,
+        mobile,
+        password,
+        religion,
         location: {
           type: "Point",
-          coordinates: [parseFloat("68.8228"), parseFloat("27.7244")],
+          coordinates: [
+            parseFloat(location.longitude),
+            parseFloat(location.latitude),
+          ],
         },
+        avatar: defaultAvatar,
+        verified: true,
       });
 
       if (user_data) {
         //Create a Tasbih for each Muslim user, check religion
+
         if (user_data.religion == 1) {
           await Tasbih.create({ username: username, count: 0 });
           await MuslimPreference.create({ username: username });
+          await NamazAlarms.create({username:username})
 
           //Create Recitation record for Muslim User
           const quranRecitation = new QuranRecitation({
@@ -78,14 +87,44 @@ const registerUser = async (req, res) => {
               parahNumber: 0,
             },
           });
-
           await quranRecitation.save((err, result) => {});
-        }
+          await LearnNamaz.create({ username });
 
-        res.send({ success: true, data: user_data, avatar: img_url });
-        return;
+          res.send({ success: true, data: user_data });
+          return;
+        } else {
+          const preference = await HinduPreference.create({ username });
+
+          //Create Recitation record for Muslim User
+          const gitaRecitation = new GitaRecitation({
+            username: username,
+            recitedChapters: [
+              {
+                chapterNumber: 0,
+                chapterName: "NONE",
+              },
+            ],
+            recitedSummaries: [
+              {
+                summaryNumber: 0,
+                summaryName: "NONE",
+              },
+            ],
+            chapterLastRead: {
+              verseNumber: 0,
+              chapterNumber: 0,
+            },
+            summaryLastRead: 0,
+          });
+          await gitaRecitation.save((err, result) => {});
+
+          res.send({ success: true, data: user_data });
+          return;
+        }
       }
-      res.send({ success: false });
+      else{
+        res.send({ success: false, msg:"No user found" });
+      }
     }
   } catch (error) {
     res.status(400).send(error.message);
@@ -109,48 +148,39 @@ const loginUser = async (req, res) => {
         const token = await createToken(user_data.username);
 
         let userPreferences;
+        let alarms;
+        let imam = null;
         if (user_data.religion == 1) {
           userPreferences = await MuslimPreference.findOne({
             username: username,
           });
-        }
-        // else{//Hindu Prefs
-        //   userPreferences = await MuslimPreference.findOne({username:username})
-        // }
-
-        if (user_data.avatar == defaultAvatar) {
-          const resultData = {
-            ...user_data._doc,
-            token: token,
-            avatar: base_url + defaultAvatar,
-            preferences: userPreferences,
-          };
-          await DeviceToken.findOneAndUpdate(
-            { username: username },
-            { username, deviceToken },
-            { upsert: true }
-          );
-          res.send({
-            success: true,
-            data: resultData,
-            msg: "Logged in Successfully",
-          });
+          alarms=await NamazAlarms.findOne({username})
+          imam = await Imam.findOne({ username: username });
         } else {
-          getProfileImage(user_data.username)
-            .then((avatar) => {
-              const resultData = {
-                ...user_data._doc,
-                token: token,
-                avatar: avatar,
-              };
-              res.send({ success: true, data: resultData });
-            })
-            .catch((error) => {
-              res
-                .status(200)
-                .send({ success: false, msg: "Could not load image" });
-            });
+          userPreferences = await HinduPreference.findOne({
+            username: username,
+          });
         }
+
+        const resultData = {
+          ...user_data._doc,
+          token: token,
+          preferences: userPreferences,
+          alarms:alarms,
+          isImam: imam ? true : false,
+        };
+
+        await DeviceToken.findOneAndUpdate(
+          { username: username },
+          { username, deviceToken },
+          { upsert: true }
+        );
+
+        res.send({
+          success: true,
+          data: resultData,
+          msg: "Logged in Successfully",
+        });
       } else {
         res.status(200).send({
           success: false,
@@ -158,9 +188,50 @@ const loginUser = async (req, res) => {
         });
       }
     } else {
-      res
-        .status(200)
-        .send({ success: false, msg: "Invalid user details provided!" });
+      res.status(200).send({
+        success: false,
+        msg: "Invalid user details provided! Or unverified account",
+      });
+    }
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+};
+
+//TODO: GET updated data does not return preferences, isImam , what to do?
+
+const getUpdatedUserdata = async (req, res) => {
+  console.log("Get Updated User Data hit");
+  try {
+    const { username } = req.body;
+
+    const user_data = await User.findOne({
+      username: username,
+    });
+
+    if (user_data) {
+      if (user_data.religion == 1) {
+        const preferences = await MuslimPreference.findOne({ username });
+        const alarms=await NamazAlarms.findOne({username})
+        let imam = await Imam.findOne({ username: username });
+        res.send({
+          success: true,
+          data: { ...user_data._doc, preferences, alarms, isImam: imam ? true : false, },
+          msg: "Fetched Data Successfully",
+        });
+      } else {
+        const preferences = await HinduPreference.findOne({ username });
+        res.send({
+          success: true,
+          data: { ...user_data._doc, preferences },
+          msg: "Fetched Data Successfully",
+        });
+      }
+    } else {
+      res.status(400).send({
+        success: false,
+        msg: "Could not fetch data ",
+      });
     }
   } catch (error) {
     res.status(400).send(error.message);
@@ -195,30 +266,76 @@ const forgotPassword = async (req, res) => {
 const updateProfileImage = async (req, res) => {
   console.log("Update Profile API hit");
   try {
-    const image = req.files.avatar;
-    const { username } = req.body;
+    const { username, profileImage } = req.body;
+
+    let image = `data:image/png;base64,${profileImage}`;
 
     const user = await User.findOne({ username });
     if (user) {
-      const imageName = username + "-" + new Date().getTime() + ".png";
-      image.mv(path.join(directoryPath, imageName), async (error) => {
-        if (!error) {
-          await User.updateOne(
-            { username: username },
-            { $set: { avatar: image.name } }
-          );
+      const avatar = user.avatar;
+      if (avatar !== defaultAvatar) {
+        let p_id = getPublicId(avatar);
+        avatarRemover(p_id)
+          .then(async (result) => {
+            if (result) {
+              await base64Uploader(image)
+                .then(async (result) => {
+                  const updated = await User.findOneAndUpdate(
+                    { username: username },
+                    { avatar: result.url },
+                    { new: true }
+                  );
 
-          res.send({
-            success: true,
-            msg: "Updated profile image successfully",
+                  return res.status(200).send({
+                    success: true,
+                    msg: "Updated Image successfully",
+                    data: updated,
+                  });
+                })
+                .catch((error) => {
+                  return res.status(400).send({
+                    success: false,
+                    msg: "Could not upload image",
+                    error: error.message,
+                  });
+                });
+            } else {
+              return res.status(400).send({
+                success: false,
+                msg: "Failed to overwrite existing image",
+              });
+            }
+          })
+          .catch((error) => {
+            return res.status(400).send({
+              success: false,
+              msg: "Failed to overwrite existing image",
+            });
           });
-        } else {
-          console.log(error);
-          res.send({ success: false, msg: "Failed to upload image" });
-        }
-      });
+      } else {
+        await base64Uploader(image)
+          .then(async (result) => {
+            const updated = await User.findOneAndUpdate(
+              { username: username },
+              { avatar: result.url }
+            );
+
+            return res.status(200).send({
+              success: true,
+              msg: "Updated Image successfully",
+              data: updated,
+            });
+          })
+          .catch((error) => {
+            return res.status(400).send({
+              success: false,
+              msg: "Could not upload image",
+              error: error.message,
+            });
+          });
+      }
     } else {
-      res.status(400).send({ success: false, msg: "No such user" });
+      return res.status(400).send({ success: false, msg: "No such user" });
     }
   } catch (error) {
     res.status(400).send(error.message);
@@ -228,22 +345,27 @@ const updateProfileImage = async (req, res) => {
 const sendOTPCode = async (req, res) => {
   console.log("GET OTP Hit");
   try {
-    const { username, mobile } = req.body;
-    const user = await User.findOne({ username });
-    if (user) {
+    const { mobile } = req.body;
+
+    console.log(mobile);
+    const doesExist = await User.findOne({ mobile: mobile });
+
+    if (!doesExist) {
+      let number = "92" + mobile.substring(1, 11);
+
       fetch("https://d7networks.com/api/verifier/send", {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          Authorization: D7_KEY,
+          Authorization: `Token ${process.env.D7_KEY}`,
         },
         body: `
-        {
-            "expiry":${OTP_EXPIRY},
-            "message":"Dear ${username} your OTP code is {code}. Valid for 5 minutes",
-            "mobile":${mobile},
-            "sender_id":"R-Assistant"}
-        `,
+          {
+              "expiry":${OTP_EXPIRY},
+              "message":"Dear User, your OTP code is {code}. Valid for 25 minutes",
+              "mobile":${number},
+              "sender_id":"R-Assistant"}
+          `,
       })
         .then((response) => response.json())
         .then((response) => {
@@ -254,10 +376,13 @@ const sendOTPCode = async (req, res) => {
           res.send({ success: false, msg: "Could not sent OTP" });
         });
     } else {
-      res.status(400).send({ success: false, msg: "No such user" });
+      res.status(400).send({
+        success: false,
+        msg: "User with this number already registered",
+      });
     }
   } catch (error) {
-    res.status(400).send(error.message);
+    res.status(400).send({ msg: error.message });
   }
 };
 
@@ -265,17 +390,17 @@ const verifyOTPCode = async (req, res) => {
   console.log("Verify OTP API Hit");
   try {
     const { otpId, otpCode } = req.body;
+    let otp_id = otpId.otp_id;
     fetch("https://d7networks.com/api/verifier/verify", {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        Authorization: D7_KEY,
+        Authorization: `Token ${process.env.D7_KEY}`,
       },
-      body: `
-        {
-            "otp_id":${otpId},
-            "otp_code":${otpCode}
-        `,
+      body: `{
+            "otp_id":"${otp_id}",
+            "otp_code":"${otpCode}"
+          }`,
     })
       .then((response) => response.json())
       .then((response) => {
@@ -290,7 +415,6 @@ const verifyOTPCode = async (req, res) => {
   }
 };
 
-
 const updatePassword = async (req, res) => {
   console.log("Update password API hit");
   try {
@@ -299,15 +423,22 @@ const updatePassword = async (req, res) => {
     const user = await User.findOne({ username });
     if (user) {
       const securePassword = await hashPassword(newPassword);
-      await User.updateOne(
+      const result = await User.updateOne(
         { username: username },
         { $set: { password: securePassword } }
       );
 
-      res.status(200).send({
-        success: true,
-        msg: "Password Updated Successfully!",
-      });
+      if (result.acknowledged) {
+        res.status(200).send({
+          success: true,
+          msg: "Password Updated Successfully!",
+        });
+      } else {
+        res.status(200).send({
+          success: false,
+          msg: "Could not update password",
+        });
+      }
     } else {
       res.status(400).send({ success: false, msg: "No such user" });
     }
@@ -317,13 +448,13 @@ const updatePassword = async (req, res) => {
 };
 
 const updateLocation = async (req, res) => {
-  console.log("Update Location API hit");
+  console.log("Update Location API hit", req.body);
   try {
     const { username, longitude, latitude } = req.body;
     const user = await User.findOne({ username });
     if (user) {
       if (latitude && longitude) {
-        const data = await User.updateOne(
+        const data = await User.findOneAndUpdate(
           { username: username },
           {
             $set: {
@@ -337,6 +468,7 @@ const updateLocation = async (req, res) => {
             new: true,
           }
         );
+
         res.send({
           success: true,
           msg: "Location Updated Successfully",
@@ -363,6 +495,7 @@ const deleteUser = async (req, res) => {
     await QuranRecitation.findOneAndDelete({ username });
     await DeviceToken.findOneAndDelete({ username });
     await MuslimPreference.findOneAndDelete({ username });
+    await LearnNamaz.findOneAndDelete({ username });
 
     // await .findOneAndDelete({ username }); Hindu Prefs
 
@@ -537,6 +670,7 @@ const insertQuranInfo = async () => {
 module.exports = {
   registerUser,
   loginUser,
+  getUpdatedUserdata,
   forgotPassword,
   updateProfileImage,
   sendOTPCode,

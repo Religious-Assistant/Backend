@@ -19,6 +19,15 @@ const mosqueSchema=mongoose.Schema({
     verified:{
         type:Boolean,
         default:false,
+    },
+    receivers:[],
+    upVotes:{
+        type:Number,
+        default:0
+    },
+    downVotes:{
+        type:Number,
+        default:0
     }
 })
 

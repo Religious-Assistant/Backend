@@ -1,4 +1,5 @@
 const mongoose=require('mongoose')
+const { HOURS_24, HOURS_12, MINS_60, MINS_30 } = require('../../controllers/utils/constants')
 
 const hinduUserPreferencesSchema=mongoose.Schema({
 
@@ -6,11 +7,11 @@ const hinduUserPreferencesSchema=mongoose.Schema({
         type:String,
         required:true,
         unique:true,
-        ref:'User',
     },
     primaryTemple:{
         type:String,
-        required:true
+        required:true,
+        default:'NONE'
     },
     phoneSilent:{       //Silent mobile when in Temple
         type:Boolean,
@@ -23,11 +24,11 @@ const hinduUserPreferencesSchema=mongoose.Schema({
         default:true
 
     },
-    timeBeforeVegDay:{      //How much time before the day, notification should recieve
-        type:String,
-        required:true,
-        enum:['MINS_30','MINS_60','HOURS_12','HOURS_24']
-    }   
+    // timeBeforeVegDay:{      //How much time before the day, notification should recieve
+    //     type:String,
+    //     required:true,
+    //     enum:[MINS_30,MINS_60,HOURS_12,HOURS_24]
+    // }   
 })
 
  

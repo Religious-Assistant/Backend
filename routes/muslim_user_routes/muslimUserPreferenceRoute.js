@@ -10,6 +10,5 @@ muslim_pref_route.patch('/update-primary-mosque',authMiddleWare,pref_controller.
 muslim_pref_route.patch('/update-auto-silent-setting',authMiddleWare,pref_controller.updateAutoSilentSettings)
 muslim_pref_route.patch('/update-namaz-notifications-setting',authMiddleWare,pref_controller.updateNamazNotificationsSetting)
 muslim_pref_route.patch('/update-accountability-notifications-setting',authMiddleWare,pref_controller.updateAccountabilityNotificationsSetting)
-muslim_pref_route.post('/testApi',pref_controller.testApi)
 
 module.exports=muslim_pref_route

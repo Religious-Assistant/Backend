@@ -1,4 +1,16 @@
 const mongoose = require("mongoose");
+const {
+  EID_NAMAZ,
+  NAMAZ_ALERT,
+  NEW_MOSQUE_ADDITION,
+  MOSQUE_CONSENSUS,
+  NEW_MOSQUE_UNVERIFIED,
+  IMAM_CONSENSUS,
+  IMAM_VERIFIED,
+  IMAM_UNVERIFIED,
+  OTHER,
+  FUNERAL,
+} = require("../../controllers/utils/constants");
 
 const notificationSchema = mongoose.Schema(
   {
@@ -13,18 +25,21 @@ const notificationSchema = mongoose.Schema(
     category: {
       type: String,
       enum: [
-        "EID_NAMAZ",
-        "DAILY_NAMAZ",
-        "NEW_ANNOUNCEMENT",
-        "MOSQUE_ADDED",
-        "MOSQUE_CONSENSUS",
-        "IMAM_CONSENSUS",
-        "SETTINGS_CHANGED",
+        EID_NAMAZ,
+        FUNERAL,
+        OTHER,
+        NAMAZ_ALERT,
+        NEW_MOSQUE_ADDITION,
+        MOSQUE_CONSENSUS,
+        NEW_MOSQUE_UNVERIFIED,
+        IMAM_CONSENSUS,
+        IMAM_VERIFIED,
+        IMAM_UNVERIFIED,
+
       ],
       required: true,
     },
     receivedBy: {
-      //username here
       type: String,
       required: true,
     },
@@ -32,8 +47,13 @@ const notificationSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    icon: {
+      type: String,
+    },
+    causedBy: { type: String, default: "" }, //It may be caused by announcement, mosque consensus, mosque addition, rejection
+    //So place announcement, mosque id
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Notification", notificationSchema);
+module.exports = mongoose.model("MuslimNotification", notificationSchema);
