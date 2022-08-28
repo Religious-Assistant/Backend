@@ -8,7 +8,15 @@ describe("Hindu User Veg Non Veg Test", () => {
   test("It validates set veg days", async () => {
     const data = {
       username: "nehaKumari",
-      vegSubscription:{ monday:true, tuesday:false, wednesday:true, thursday:false, friday:true, saturday:false, sunday:false }
+      vegSubscription: {
+        monday: true,
+        tuesday: false,
+        wednesday: true,
+        thursday: false,
+        friday: true,
+        saturday: false,
+        sunday: false,
+      },
     };
     const res = await request(app)
       .patch("/api/set-veg-days")
@@ -17,20 +25,20 @@ describe("Hindu User Veg Non Veg Test", () => {
     expect(res.body.success).toBe(true);
   });
 
-//   test("It validates set veg days", async () => {
-//     const data = {
-//       username: "heer",
-//       vegSubscription:{ monday:true, tuesday:false, wednesday:true, thursday:false, friday:true, saturday:false, sunday:false }
-//     };
-//     const res = await request(app)
-//       .patch("/api/set-veg-days")
-//       .send(data)
-//       .set("Authorization", token);
-//       console.log(res.body)
-//     expect(res.body.success).toBe(false);
-//   });
+  //   test("It validates set veg days", async () => {
+  //     const data = {
+  //       username: "heer",
+  //       vegSubscription:{ monday:true, tuesday:false, wednesday:true, thursday:false, friday:true, saturday:false, sunday:false }
+  //     };
+  //     const res = await request(app)
+  //       .patch("/api/set-veg-days")
+  //       .send(data)
+  //       .set("Authorization", token);
+  //       console.log(res.body)
+  //     expect(res.body.success).toBe(false);
+  //   });
 
-test("It validates get veg days", async () => {
+  test("It validates get veg days", async () => {
     const data = {
       username: "nehaKumari",
     };
@@ -41,7 +49,7 @@ test("It validates get veg days", async () => {
     expect(res.body.success).toBe(true);
   });
 
-  test("It validates get veg days", async () => {
+  test("It validates get veg days, when username is incorrect", async () => {
     const data = {
       username: "heeer",
     };
@@ -51,5 +59,4 @@ test("It validates get veg days", async () => {
       .set("Authorization", token);
     expect(res.body.success).toBe(false);
   });
-
 });
