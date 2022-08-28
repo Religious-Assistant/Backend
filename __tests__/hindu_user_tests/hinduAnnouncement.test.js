@@ -4,13 +4,13 @@ const avatar = require("../../controllers/utils/constants");
 let token =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiJuZWhhS3VtYXJpIiwiaWF0IjoxNjYxNzIxNjk5LCJleHAiOjE2NjIzMjY0OTl9.ScBZFzLcj2nOxYWWFkl-iCREX2ppKR1BONDlwMK-oaQ";
 
-describe("Muslim User Make Announcement Test", () => {
+describe("Hindu User Make Announcement Test", () => {
    //must pass and make announcement
     // test("It validates make Announcement", async () => {
     //   const user = {
-    //       announcedBy: "noorFatima",
-    //     statement: "new Announcement for eid",
-    //     category: 'EID_NAMAZ',
+    //       announcedBy: "nehaKumari",
+    //     statement: "new Announcement",
+    //     category: 'OTHER',
     //     longitude: 28.790094,
     //     latitude: 68.78905,
     //     avatar: avatar.defaultAvatar,
