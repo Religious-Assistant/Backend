@@ -33,13 +33,14 @@ const registerUser = async (req, res) => {
   console.log("Register API hit");
 
   try {
-    const { username, mobile, password, religion, location } = await req.body;
+    let { username, mobile, password, religion, location } = await req.body;
+    username=username.trim().toLowerCase()
     const duplicateUser = await User.findOne({ username: username });
     if (duplicateUser) {
       res.status(200).send({ success: false, msg: "User already exists!" });
     } else {
       const user_data = await User.create({
-        username,
+        username:username,
         mobile,
         password,
         religion,
@@ -132,10 +133,11 @@ const registerUser = async (req, res) => {
 };
 
 const loginUser = async (req, res) => {
-  console.log("Login API hit", req.body.password, req.body.username);
+  console.log("Login API hit");
   try {
-    const { username, password, deviceToken } = req.body;
+    let { username, password, deviceToken } = req.body;
 
+    username=username.trim().toLowerCase()
     const user_data = await User.findOne({
       username: username,
       verified: true,
